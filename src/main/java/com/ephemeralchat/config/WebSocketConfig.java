@@ -28,8 +28,8 @@ public class WebSocketConfig implements WebSocketConfigurer {
     @org.springframework.context.annotation.Bean
     public org.springframework.web.socket.server.standard.ServletServerContainerFactoryBean createWebSocketContainer() {
         org.springframework.web.socket.server.standard.ServletServerContainerFactoryBean container = new org.springframework.web.socket.server.standard.ServletServerContainerFactoryBean();
-        container.setMaxTextMessageBufferSize(200 * 1024 * 1024); // 200MB (accounts for base64 encoding overhead)
-        container.setMaxBinaryMessageBufferSize(200 * 1024 * 1024); // 200MB
+        container.setMaxTextMessageBufferSize(5 * 1024 * 1024); // 5MB
+        container.setMaxBinaryMessageBufferSize(5 * 1024 * 1024); // 5MB
         container.setMaxSessionIdleTimeout(300000L); // 5 minutes idle timeout
         return container;
     }
