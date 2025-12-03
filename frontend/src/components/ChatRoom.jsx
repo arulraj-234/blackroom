@@ -32,6 +32,7 @@ const ChatRoom = () => {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const recordingTimerRef = useRef(null);
+  const audioRefs = useRef({});
 
   // Audio Playback State
   const [playingAudioId, setPlayingAudioId] = useState(null);
@@ -982,6 +983,7 @@ const ChatRoom = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between', // Ensure items are spread out
+              width: '100%', // Force full width for flex container
               gap: '0.5rem',
               padding: '0.5rem', // Reduced padding further
               background: isSlideToCancel ? 'rgba(255, 59, 48, 0.1)' : 'var(--bg-secondary)',
