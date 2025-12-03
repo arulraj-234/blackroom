@@ -1,0 +1,27 @@
+
+> frontend@0.0.0 lint
+> eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0
+
+
+D:\vscode\text - Copy\frontend\src\App.jsx
+  1:8  error  'React' is defined but never used  no-unused-vars
+
+D:\vscode\text - Copy\frontend\src\components\ChatRoom.jsx
+    1:8  error    'React' is defined but never used                                                                                         no-unused-vars
+  108:6  warning  React Hook useEffect has a missing dependency: 'handleIncomingMessage'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\vscode\text - Copy\frontend\src\components\CreateRoom.jsx
+  1:8  error  'React' is defined but never used  no-unused-vars
+
+D:\vscode\text - Copy\frontend\src\components\Home.jsx
+   1:8   error  'React' is defined but never used                                no-unused-vars
+  27:83  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+D:\vscode\text - Copy\frontend\src\components\JoinRoom.jsx
+  1:8  error  'React' is defined but never used  no-unused-vars
+
+D:\vscode\text - Copy\frontend\src\components\ThemeToggle.jsx
+  1:8  error  'React' is defined but never used  no-unused-vars
+
+Γ£û 8 problems (7 errors, 1 warning)
+

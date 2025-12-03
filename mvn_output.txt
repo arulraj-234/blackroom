@@ -1,0 +1,29 @@
+[0.015s][warning][cds] A jar file is not the one used while building the shared archive file: C:\Users\deada\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21\lib\modules
+[0.015s][warning][cds] A jar file is not the one used while building the shared archive file: C:\Users\deada\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21\lib\modules
+[0.015s][warning][cds] C:\Users\deada\AppData\Roaming\Code\User\globalStorage\pleiades.java-extension-pack-jdk\java\21\lib\modules timestamp has changed.
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------< com.ephemeralchat:ephemeral-chat >------------------
+[INFO] Building ephemeral-chat 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.4.1:clean (default-clean) @ ephemeral-chat ---
+[INFO] Deleting D:\vscode\text - Copy\target
+[INFO] 
+[INFO] --- enforcer:3.2.1:enforce (enforce-java) @ ephemeral-chat ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.version.RequireJavaVersion passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ ephemeral-chat ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ ephemeral-chat ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 8 source files with javac [debug release 21] to target\classes
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.892 s
+[INFO] Finished at: 2025-11-21T21:57:29+05:30
+[INFO] ------------------------------------------------------------------------
