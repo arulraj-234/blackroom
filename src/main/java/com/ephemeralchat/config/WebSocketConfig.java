@@ -22,7 +22,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
     @Override
     public void registerWebSocketHandlers(@NonNull WebSocketHandlerRegistry registry) {
         registry.addHandler(chatWebSocketHandler, "/chat")
-                .setAllowedOrigins("*"); // Allow all origins for development
+                .setAllowedOriginPatterns("*"); // Allow all origins for development
     }
 
     @org.springframework.context.annotation.Bean
