@@ -1,0 +1,287 @@
+@import "tailwindcss";
+
+/* === BlackRoom Stealth Design System === */
+
+:root {
+    /* Fonts */
+    --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+    /* Base Colors - Stealth Palette */
+    --bg-primary: #050505;
+    /* Deepest Black */
+    --bg-secondary: #121212;
+    /* Matte Black */
+    --bg-tertiary: #1E1E1E;
+    /* Dark Grey */
+
+    --text-primary: #E0E0E0;
+    /* Off-white/Silver */
+    --text-secondary: #888888;
+    /* Dim Grey */
+    --text-muted: #555555;
+
+    --accent: #333333;
+    /* Stealth Grey */
+    --accent-glow: rgba(255, 255, 255, 0.05);
+
+    --border-color: #2A2A2A;
+    --border-hover: #444444;
+
+    --success: #2ea043;
+    --error: #da3633;
+
+    /* Spacing & Radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 16px;
+}
+
+[data-theme="grey"] {
+    /* Greyish Theme - Concrete/Slate */
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #252525;
+    --bg-tertiary: #303030;
+    --border-color: #404040;
+    --accent: #4a4a4a;
+}
+
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    /* Mobile tap fix */
+}
+
+html,
+body {
+    height: 100%;
+    width: 100%;
+    overflow-x: hidden;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-main);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+}
+
+.font-mono {
+    font-family: var(--font-mono);
+}
+
+/* Layout Utilities */
+.container {
+    width: 100%;
+    max-width: 600px;
+    /* Mobile-first constraint */
+    margin: 0 auto;
+    padding: 1rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+}
+
+/* Components */
+
+/* Stealth Card */
+.stealth-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    transition: all 0.2s ease;
+}
+
+.stealth-card:hover {
+    border-color: var(--border-hover);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    min-height: 52px;
+    /* Touch target size */
+    font-family: var(--font-mono);
+    letter-spacing: -0.03em;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn-primary {
+    background: var(--text-primary);
+    color: var(--bg-primary);
+    border: 1px solid var(--text-primary);
+}
+
+.btn-primary:hover {
+    background: #ffffff;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    border-color: var(--text-primary);
+    background: var(--accent-glow);
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+}
+
+.btn-ghost:hover {
+    color: var(--text-primary);
+}
+
+.btn-round {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Inputs */
+.input-stealth {
+    width: 100%;
+    padding: 1rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.input-stealth:focus {
+    border-color: var(--text-primary);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.05);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-in {
+    animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+}
+
+.delay-100 {
+    animation-delay: 0.1s;
+}
+
+.delay-200 {
+    animation-delay: 0.2s;
+}
+
+.delay-300 {
+    animation-delay: 0.3s;
+}
+
+@keyframes rotateCube {
+    0% {
+        transform: rotateX(0deg) rotateY(0deg);
+    }
+
+    100% {
+        transform: rotateX(360deg) rotateY(360deg);
+    }
+}
+
+/* Mobile Specifics */
+@media (max-width: 480px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .btn:not(.btn-round) {
+        width: 100%;
+        /* Full width on mobile, except round buttons */
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .btn:not(.btn-round) {
+        padding: 0.75rem 1rem;
+        min-height: 44px;
+        font-size: 0.9375rem;
+    }
+
+    .stealth-card {
+        padding: 1rem;
+    }
+}
+
+@keyframes wave {
+
+    0%,
+    100% {
+        height: 4px;
+    }
+
+    50% {
+        height: 16px;
+    }
+}
+
+.chat-input-container {
+    padding: 1rem;
+}
+
+@media (max-width: 768px) {
+    .chat-input-container {
+        padding: 0.5rem;
+    }
+}
