@@ -1,13 +1,20 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
 
 export default function Auth() {
+  const { user } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -22,23 +29,37 @@ export default function Auth() {
         });
         if (error) throw error;
       } else {
+        if (username.length < 3) {
+          throw new Error('Username must be at least 3 characters');
+        }
+
+        // Check if username is taken
+        const { data: existing } = await supabase
+          .from('users')
+          .select('id')
+          .eq('username', username.trim().toLowerCase())
+          .single();
+
+        if (existing) {
+          throw new Error('Username already taken');
+        }
+
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
         });
         if (error) throw error;
-        
-        // After signup, insert the public profile
+
         if (data.user) {
-            const { error: insertError } = await supabase.from('users').insert({
-                id: data.user.id,
-                username: username,
-                display_name: username
-            });
-            if (insertError) {
-                console.error("Error creating profile:", insertError);
-                throw new Error("Account created, but failed to setup profile. Please contact support.");
-            }
+          const { error: insertError } = await supabase.from('users').insert({
+            id: data.user.id,
+            username: username.trim().toLowerCase(),
+            display_name: username.trim(),
+          });
+          if (insertError) {
+            console.error('Profile creation error:', insertError);
+            throw new Error('Account created, but profile setup failed.');
+          }
         }
       }
     } catch (err) {
@@ -49,75 +70,98 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center p-4 font-sans">
-      <div className="w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl transition-all duration-300">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-black tracking-widest mb-2 text-transparent bg-clip-text bg-gradient-to-r from-gray-200 to-gray-500">
-            BLACKROOM
+    <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center p-4" style={{ fontFamily: "'Inter', sans-serif" }}>
+      {/* Background subtle gradient */}
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(99,102,241,0.05)_0%,_transparent_50%)]" />
+
+      <div className="w-full max-w-sm relative z-10">
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-10">
+          <img src="/logo1.png" alt="Blackroom" className="w-16 h-16 rounded-xl mb-5 shadow-lg shadow-black/50" />
+          <h1 className="text-2xl font-bold tracking-tight text-[#e4e4e7]">
+            {isLogin ? 'Welcome back' : 'Create your account'}
           </h1>
-          <p className="text-gray-400 text-sm tracking-widest uppercase font-semibold">Zero Trace. Total Stealth.</p>
+          <p className="text-sm text-[#52525b] mt-1.5">
+            {isLogin ? 'Sign in to continue to Blackroom' : 'Join the conversation'}
+          </p>
         </div>
 
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-lg mb-6 text-sm text-center">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleAuth} className="space-y-5">
-          {!isLogin && (
-             <div className="space-y-1">
-               <label className="block text-xs uppercase tracking-wider text-gray-400 ml-1">Operative Alias (Username)</label>
-               <input 
-                 type="text" 
-                 required 
-                 value={username}
-                 onChange={(e) => setUsername(e.target.value)}
-                 className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/30 transition-all"
-                 placeholder="ghost_protocol"
-               />
-             </div>
+        {/* Card */}
+        <div className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-2xl p-6 shadow-xl">
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl mb-5 text-sm">
+              {error}
+            </div>
           )}
-          
-          <div className="space-y-1">
-            <label className="block text-xs uppercase tracking-wider text-gray-400 ml-1">Transmission Link (Email)</label>
-            <input 
-              type="email" 
-              required 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/30 transition-all"
-              placeholder="agent@shadow.net"
-            />
-          </div>
 
-          <div className="space-y-1">
-            <label className="block text-xs uppercase tracking-wider text-gray-400 ml-1">Cipher Key (Password)</label>
-            <input 
-              type="password" 
-              required 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/30 transition-all"
-              placeholder="••••••••"
-            />
-          </div>
+          <form onSubmit={handleAuth} className="space-y-4">
+            {!isLogin && (
+              <div>
+                <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5 ml-0.5">Username</label>
+                <input
+                  type="text"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full bg-[#111] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm text-white placeholder-[#52525b] focus:outline-none focus:border-[#6366f1] focus:ring-1 focus:ring-[#6366f1]/30 transition-all"
+                  placeholder="Choose a unique username"
+                />
+              </div>
+            )}
 
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-white text-black hover:bg-gray-200 transition-all rounded-xl py-3 mt-8 font-bold tracking-widest uppercase text-sm disabled:opacity-50"
-          >
-            {loading ? 'Processing...' : (isLogin ? 'Initialize Link' : 'Create Protocol')}
-          </button>
-        </form>
+            <div>
+              <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5 ml-0.5">Email</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-[#111] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm text-white placeholder-[#52525b] focus:outline-none focus:border-[#6366f1] focus:ring-1 focus:ring-[#6366f1]/30 transition-all"
+                placeholder="you@email.com"
+              />
+            </div>
 
-        <div className="mt-8 text-center">
-          <button 
+            <div>
+              <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5 ml-0.5">Password</label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-[#111] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm text-white placeholder-[#52525b] focus:outline-none focus:border-[#6366f1] focus:ring-1 focus:ring-[#6366f1]/30 transition-all"
+                placeholder="••••••••"
+                minLength={6}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#6366f1] hover:bg-[#818cf8] text-white rounded-xl py-3 mt-2 font-semibold text-sm transition-all disabled:opacity-50 disabled:hover:bg-[#6366f1] shadow-lg shadow-[#6366f1]/20"
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Processing...
+                </span>
+              ) : (
+                isLogin ? 'Sign In' : 'Create Account'
+              )}
+            </button>
+          </form>
+        </div>
+
+        {/* Toggle */}
+        <div className="mt-6 text-center">
+          <button
             onClick={() => { setIsLogin(!isLogin); setError(''); }}
-            className="text-gray-500 hover:text-white text-xs uppercase tracking-widest transition-colors"
+            className="text-[#52525b] hover:text-[#a1a1aa] text-sm transition-colors"
           >
-            {isLogin ? "Need a protocol? Register here" : "Already an operative? Login here"}
+            {isLogin ? (
+              <>Don't have an account? <span className="text-[#6366f1] font-medium">Sign Up</span></>
+            ) : (
+              <>Already have an account? <span className="text-[#6366f1] font-medium">Sign In</span></>
+            )}
           </button>
         </div>
       </div>

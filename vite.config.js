@@ -5,13 +5,8 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
     plugins: [react()],
     server: {
-        proxy: {
-            '/api': 'http://localhost:8080',
-            '/chat': {
-                target: 'ws://localhost:8080',
-                ws: true
-            }
-        }
+        port: 3000,
+        strictPort: true,
     },
     resolve: {
         alias: {
