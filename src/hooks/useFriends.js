@@ -119,6 +119,23 @@ export function useFriends() {
     await fetchFriendships();
   }, [fetchFriendships]);
 
+  const searchUsers = useCallback(async (query) => {
+    if (!query || query.trim().length < 2) return [];
+    
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .ilike('username', `%${query}%`)
+      .neq('id', user.id)
+      .limit(20);
+      
+    if (error) {
+      console.error('Error searching users:', error);
+      return [];
+    }
+    return data;
+  }, [user]);
+
   return {
     friends,
     incomingRequests,
@@ -129,6 +146,7 @@ export function useFriends() {
     declineRequest,
     removeFriend,
     blockUser,
+    searchUsers,
     refetch: fetchFriendships,
   };
 }

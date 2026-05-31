@@ -4,7 +4,7 @@ import { useFriends } from '../hooks/useFriends';
 import { UserPlus, Check, X, Search, User, MessageCircle } from 'lucide-react';
 
 export default function FriendsPanel({ onStartDM, onClose }) {
-  const { friends, pendingRequests, sentRequests, loading, searchUsers, sendRequest, acceptRequest, rejectRequest, cancelRequest } = useFriends();
+  const { friends, incomingRequests, outgoingRequests, loading, searchUsers, sendRequest, acceptRequest, declineRequest } = useFriends();
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -32,12 +32,12 @@ export default function FriendsPanel({ onStartDM, onClose }) {
 
   const getRequestStatus = (userId) => {
     if (friends.find((f) => f.id === userId)) return 'friends';
-    if (sentRequests.find((r) => r.addressee_id === userId)) return 'sent';
-    if (pendingRequests.find((r) => r.requester_id === userId)) return 'pending';
+    if (outgoingRequests.find((r) => r.id === userId)) return 'sent';
+    if (incomingRequests.find((r) => r.id === userId)) return 'pending';
     return 'none';
   };
 
-  const pendingCount = pendingRequests?.length || 0;
+  const pendingCount = incomingRequests?.length || 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
@@ -149,31 +149,31 @@ export default function FriendsPanel({ onStartDM, onClose }) {
               {/* Received Requests */}
               <div>
                 <h3 className="px-3 py-2 text-xs font-bold uppercase tracking-wider text-[#52525b]">
-                  Received — {pendingRequests?.length || 0}
+                  Received — {incomingRequests?.length || 0}
                 </h3>
-                {!pendingRequests || pendingRequests.length === 0 ? (
+                {!incomingRequests || incomingRequests.length === 0 ? (
                   <p className="px-3 py-2 text-sm text-[#71717a]">No pending requests</p>
                 ) : (
-                  pendingRequests.map((req) => (
+                  incomingRequests.map((req) => (
                     <div key={req.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-[#1e1e1e] flex items-center justify-center text-[#a1a1aa] font-bold text-sm">
-                          {req.users?.username?.substring(0, 2).toUpperCase()}
+                          {req.username?.substring(0, 2).toUpperCase()}
                         </div>
                         <div>
-                          <div className="text-[#e4e4e7] font-medium text-sm">{req.users?.display_name || req.users?.username}</div>
+                          <div className="text-[#e4e4e7] font-medium text-sm">{req.display_name || req.username}</div>
                           <div className="text-[#52525b] text-xs">Incoming request</div>
                         </div>
                       </div>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => acceptRequest(req.id)}
+                          onClick={() => acceptRequest(req.friendshipId)}
                           className="w-8 h-8 rounded-full bg-green-500/10 hover:bg-green-500/20 text-green-500 flex items-center justify-center transition-colors"
                         >
                           <Check size={16} />
                         </button>
                         <button
-                          onClick={() => rejectRequest(req.id)}
+                          onClick={() => declineRequest(req.friendshipId)}
                           className="w-8 h-8 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 flex items-center justify-center transition-colors"
                         >
                           <X size={16} />
@@ -187,21 +187,21 @@ export default function FriendsPanel({ onStartDM, onClose }) {
               {/* Sent Requests */}
               <div>
                 <h3 className="px-3 py-2 text-xs font-bold uppercase tracking-wider text-[#52525b]">
-                  Sent — {sentRequests?.length || 0}
+                  Sent — {outgoingRequests?.length || 0}
                 </h3>
-                {!sentRequests || sentRequests.length === 0 ? (
+                {!outgoingRequests || outgoingRequests.length === 0 ? (
                   <p className="px-3 py-2 text-sm text-[#71717a]">No sent requests</p>
                 ) : (
-                  sentRequests.map((req) => (
+                  outgoingRequests.map((req) => (
                     <div key={req.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-[#1e1e1e] flex items-center justify-center text-[#a1a1aa] font-bold text-sm">
-                          {req.users?.username?.substring(0, 2).toUpperCase()}
+                          {req.username?.substring(0, 2).toUpperCase()}
                         </div>
-                        <div className="text-[#e4e4e7] font-medium text-sm">{req.users?.display_name || req.users?.username}</div>
+                        <div className="text-[#e4e4e7] font-medium text-sm">{req.display_name || req.username}</div>
                       </div>
                       <button
-                        onClick={() => cancelRequest(req.id)}
+                        onClick={() => declineRequest(req.friendshipId)}
                         className="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 text-xs font-medium transition-colors"
                       >
                         Cancel
