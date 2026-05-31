@@ -54,7 +54,7 @@ export function useConversations() {
           .eq('conversation_id', convo.id)
           .order('created_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
         // For DMs, find the other user
         const otherParticipant = convo.conversation_participants?.find(
@@ -117,11 +117,34 @@ export function useConversations() {
   }, [fetchConversations]);
 
   const createDM = useCallback(async (otherUserId) => {
-    // Check if DM already exists
+    // Check if DM already exists in local state
     const existing = conversations.find(
       (c) => !c.is_group && c.otherUser?.id === otherUserId
     );
     if (existing) return existing.id;
+
+    // Fallback: Check server to prevent duplicate DMs if local state is stale
+    const { data: checkData } = await supabase
+      .from('conversation_participants')
+      .select('conversation_id')
+      .eq('user_id', user.id);
+      
+    if (checkData && checkData.length > 0) {
+      const convoIds = checkData.map(c => c.conversation_id);
+      const { data: shared } = await supabase
+        .from('conversation_participants')
+        .select('conversation_id, conversations!inner(is_group)')
+        .in('conversation_id', convoIds)
+        .eq('user_id', otherUserId)
+        .eq('conversations.is_group', false)
+        .limit(1)
+        .maybeSingle();
+        
+      if (shared) {
+        await fetchConversations();
+        return shared.conversation_id;
+      }
+    }
 
     // Create new conversation
     const { data: newConvo, error } = await supabase
