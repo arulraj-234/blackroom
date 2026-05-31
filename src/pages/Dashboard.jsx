@@ -86,6 +86,33 @@ export default function Dashboard() {
           }
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'friendships',
+          filter: `addressee_id=eq.${user.id}`
+        },
+        async (payload) => {
+          const { data: senderData } = await supabase
+            .from('users')
+            .select('display_name, username')
+            .eq('id', payload.new.requester_id)
+            .single();
+            
+          const senderName = senderData?.display_name || senderData?.username || 'Someone';
+
+          if ('Notification' in window && Notification.permission === 'granted') {
+            const notification = new Notification('New Friend Request', {
+              body: `${senderName} sent you a friend request!`,
+            });
+            notification.onclick = () => {
+              window.focus();
+            };
+          }
+        }
+      )
       .subscribe();
 
     return () => {
