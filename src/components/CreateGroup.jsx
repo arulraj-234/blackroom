@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Users } from 'lucide-react';
 import { useFriends } from '../hooks/useFriends';
 import { useConversations } from '../hooks/useConversations';
@@ -49,8 +49,8 @@ export default function CreateGroup({ onClose, onCreated }) {
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-[#1e1e1e]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#6366f1]/10 flex items-center justify-center">
-              <Users className="w-5 h-5 text-[#6366f1]" />
+            <div className="w-10 h-10 rounded-full bg-[#a78bfa]/10 flex items-center justify-center">
+              <Users className="w-5 h-5 text-[#a78bfa]" />
             </div>
             <h3 className="text-lg font-bold text-[#e4e4e7]">Create Group</h3>
           </div>
@@ -93,11 +93,11 @@ export default function CreateGroup({ onClose, onCreated }) {
                       key={friend.id}
                       onClick={() => toggleMember(friend.id)}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
-                        selected ? 'bg-[#6366f1]/10' : 'hover:bg-white/5'
+                        selected ? 'bg-[#a78bfa]/10' : 'hover:bg-white/5'
                       }`}
                     >
                       <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                        selected ? 'bg-[#6366f1] border-[#6366f1]' : 'border-[#3f3f46]'
+                        selected ? 'bg-[#a78bfa] border-[#a78bfa]' : 'border-[#3f3f46]'
                       }`}>
                         {selected && <span className="text-white text-xs">✓</span>}
                       </div>
@@ -124,7 +124,7 @@ export default function CreateGroup({ onClose, onCreated }) {
           <button
             onClick={handleCreate}
             disabled={loading || !name.trim() || selectedIds.length === 0}
-            className="flex-1 px-4 py-2.5 rounded-lg bg-[#6366f1] hover:bg-[#818cf8] text-white text-sm font-medium transition-colors disabled:opacity-50"
+            className="flex-1 px-4 py-2.5 rounded-lg bg-[#a78bfa] hover:bg-[#c4b5fd] text-white text-sm font-medium transition-colors disabled:opacity-50"
           >
             {loading ? 'Creating...' : 'Create Group'}
           </button>

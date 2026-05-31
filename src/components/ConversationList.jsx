@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Search, Plus, MessageCircle, Users, Hash } from 'lucide-react';
+import { Search, Plus, MessageCircle, Users } from 'lucide-react';
 
 /**
  * Format a timestamp to a relative string.
@@ -44,8 +44,18 @@ function getInitials(name) {
 /* ── Avatar ─────────────────────────────────── */
 
 function ConversationAvatar({ conversation }) {
-  const isGroup = conversation.type === 'group';
-  const initials = getInitials(conversation.name);
+  const isGroup = conversation.is_group;
+  const initials = getInitials(conversation.displayName);
+
+  if (conversation.displayAvatar) {
+    return (
+      <img
+        src={conversation.displayAvatar}
+        alt=""
+        className={`flex-shrink-0 w-10 h-10 object-cover border border-[#2a2a2a] ${isGroup ? 'rounded-xl' : 'rounded-full'}`}
+      />
+    );
+  }
 
   if (isGroup) {
     return (
@@ -62,7 +72,7 @@ function ConversationAvatar({ conversation }) {
   }
 
   // DM avatar — generate a consistent color from the name
-  const hue = (conversation.name || '').split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % 360;
+  const hue = (conversation.displayName || '').split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % 360;
 
   return (
     <div
@@ -103,7 +113,7 @@ function ConversationItem({ conversation, isSelected, onSelect }) {
             className="text-sm font-medium truncate"
             style={{ color: isSelected ? '#e4e4e7' : '#e4e4e7' }}
           >
-            {conversation.name}
+            {conversation.displayName}
           </span>
           <span
             className="text-[11px] flex-shrink-0 font-mono"
@@ -118,14 +128,16 @@ function ConversationItem({ conversation, isSelected, onSelect }) {
             className="text-[13px] truncate"
             style={{ color: '#52525b' }}
           >
-            {conversation.lastMessage || 'No messages yet'}
+            {conversation.lastMessage
+              ? conversation.lastMessage.content || (conversation.lastMessage.media_type ? `Sent a ${conversation.lastMessage.media_type}` : 'Sent an attachment')
+              : 'No messages yet'}
           </p>
 
           {/* Unread badge */}
           {conversation.unreadCount > 0 && (
             <span
               className="flex-shrink-0 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[11px] font-semibold rounded-full text-white"
-              style={{ background: '#6366f1' }}
+              style={{ background: '#a78bfa' }}
             >
               {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
             </span>
@@ -146,9 +158,9 @@ function EmptyState({ type }) {
         style={{ background: 'rgba(99, 102, 241, 0.08)' }}
       >
         {type === 'groups' ? (
-          <Users size={24} className="text-[#6366f1]" />
+          <Users size={24} className="text-[#a78bfa]" />
         ) : (
-          <MessageCircle size={24} className="text-[#6366f1]" />
+          <MessageCircle size={24} className="text-[#a78bfa]" />
         )}
       </div>
       <h3 className="text-sm font-medium mb-1" style={{ color: '#e4e4e7' }}>
@@ -182,8 +194,8 @@ function ConversationList({
     const q = search.toLowerCase().trim();
     return conversations.filter(
       (c) =>
-        c.name?.toLowerCase().includes(q) ||
-        c.lastMessage?.toLowerCase().includes(q)
+        c.displayName?.toLowerCase().includes(q) ||
+        (c.lastMessage?.content && c.lastMessage.content.toLowerCase().includes(q))
     );
   }, [conversations, search]);
 
@@ -192,25 +204,18 @@ function ConversationList({
   }, []);
 
   return (
-    <div
-      className="flex flex-col h-full flex-shrink-0 overflow-hidden"
-      style={{
-        width: '320px',
-        background: '#0a0a0a',
-        borderRight: '1px solid #1e1e1e',
-      }}
-    >
+    <div className="flex flex-col w-full h-full flex-shrink-0 overflow-hidden bg-[#0a0a0a]">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
-        <h2 className="text-base font-semibold" style={{ color: '#e4e4e7' }}>
+      <div className="flex items-center justify-between px-5 pt-6 pb-4 flex-shrink-0">
+        <h2 className="text-xl font-bold tracking-tight" style={{ color: '#e4e4e7' }}>
           {title}
         </h2>
         <button
           onClick={onNewChat}
-          className="w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150"
+          className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-150"
           style={{
             background: 'rgba(99, 102, 241, 0.1)',
-            color: '#6366f1',
+            color: '#a78bfa',
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = 'rgba(99, 102, 241, 0.2)';
@@ -220,16 +225,16 @@ function ConversationList({
           }}
           title={activeTab === 'groups' ? 'New group' : 'New message'}
         >
-          <Plus size={16} strokeWidth={2} />
+          <Plus size={18} strokeWidth={2} />
         </button>
       </div>
 
       {/* Search */}
-      <div className="px-3 pb-2 flex-shrink-0">
+      <div className="px-5 pb-4 flex-shrink-0">
         <div className="relative">
           <Search
-            size={14}
-            className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+            size={16}
+            className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"
             style={{ color: '#52525b' }}
           />
           <input
@@ -237,7 +242,7 @@ function ConversationList({
             value={search}
             onChange={handleSearchChange}
             placeholder="Search..."
-            className="w-full pl-9 pr-3 py-2 text-sm rounded-lg outline-none transition-all duration-150"
+            className="w-full pl-11 pr-4 py-2.5 text-[15px] rounded-xl outline-none transition-all duration-150"
             style={{
               background: '#111111',
               border: '1px solid #1e1e1e',
@@ -259,7 +264,7 @@ function ConversationList({
           search.trim() ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <p className="text-xs" style={{ color: '#52525b' }}>
-                No results for "{search}"
+                No results for &quot;{search}&quot;
               </p>
             </div>
           ) : (

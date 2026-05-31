@@ -85,71 +85,71 @@ export default function UserProfile({ onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-[#1e1e1e]">
-          <h3 className="text-lg font-bold text-[#e4e4e7]">Profile</h3>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/10 text-[#71717a] hover:text-white transition-all">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[#1e1e1e]">
+          <h3 className="text-xl font-bold text-[#e4e4e7]">Profile</h3>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-white/10 text-[#71717a] hover:text-white transition-all">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Avatar */}
-        <div className="p-6 flex flex-col items-center">
+        <div className="px-6 py-8 flex flex-col items-center">
           <div className="relative group">
             {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="Avatar" className="w-20 h-20 rounded-full object-cover border-2 border-[#2a2a2a]" />
+              <img src={profile.avatar_url} alt="Avatar" className="w-24 h-24 rounded-full object-cover border-4 border-[#1e1e1e] shadow-xl" />
             ) : (
-              <div className="w-20 h-20 rounded-full bg-[#1e1e1e] flex items-center justify-center text-2xl font-bold text-[#a1a1aa] border-2 border-[#2a2a2a]">
+              <div className="w-24 h-24 rounded-full bg-[#1e1e1e] flex items-center justify-center text-3xl font-bold text-[#a1a1aa] border-4 border-[#2a2a2a] shadow-xl">
                 {profile?.username?.substring(0, 2).toUpperCase()}
               </div>
             )}
-            <label className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity">
-              <Camera className="w-5 h-5 text-white" />
+            <label className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-all hover:scale-105">
+              <Camera className="w-6 h-6 text-white" />
               <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
             </label>
           </div>
-          <p className="text-sm text-[#52525b] mt-2">@{profile?.username}</p>
+          <p className="text-sm font-medium text-[#71717a] mt-4">@{profile?.username}</p>
         </div>
 
         {/* Form */}
-        <div className="px-6 pb-6 space-y-4">
-          <div>
-            <label className="block text-xs uppercase tracking-wider text-[#71717a] mb-1.5 font-medium">Display Name</label>
+        <div className="px-6 pb-8 flex flex-col gap-5">
+          <div className="flex flex-col gap-2">
+            <label className="text-[11px] font-bold uppercase tracking-widest text-[#71717a]">Display Name</label>
             <input
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg px-4 py-2.5 text-sm text-[#e4e4e7] focus:outline-none focus:border-[#3f3f46] transition-colors"
+              className="w-full bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl px-4 py-3 text-[15px] text-[#e4e4e7] focus:outline-none focus:border-[#3f3f46] transition-colors"
             />
           </div>
-          <div>
-            <label className="block text-xs uppercase tracking-wider text-[#71717a] mb-1.5 font-medium">Bio</label>
+          <div className="flex flex-col gap-2">
+            <label className="text-[11px] font-bold uppercase tracking-widest text-[#71717a]">Bio</label>
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={3}
               maxLength={160}
               placeholder="Tell people about yourself..."
-              className="w-full bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg px-4 py-2.5 text-sm text-[#e4e4e7] placeholder-[#52525b] focus:outline-none focus:border-[#3f3f46] transition-colors resize-none"
+              className="w-full bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl px-4 py-3 text-[15px] text-[#e4e4e7] placeholder-[#52525b] focus:outline-none focus:border-[#3f3f46] transition-colors resize-none"
             />
-            <p className="text-xs text-[#52525b] text-right mt-1">{bio.length}/160</p>
+            <p className="text-xs text-[#52525b] text-right">{bio.length}/160</p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-5 border-t border-[#1e1e1e] flex gap-3">
+        <div className="px-6 py-5 border-t border-[#1e1e1e] flex gap-3">
           <button
             onClick={() => supabase.auth.signOut()}
-            className="px-4 py-2.5 rounded-lg border border-red-500/20 text-red-400 hover:bg-red-500/10 text-sm font-medium transition-colors"
+            className="px-5 py-3 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-500/10 text-sm font-bold transition-colors"
           >
             Sign Out
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex-1 px-4 py-2.5 rounded-lg bg-[#6366f1] hover:bg-[#818cf8] text-white text-sm font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 px-5 py-3 rounded-xl bg-[#a78bfa] hover:bg-[#c4b5fd] text-white text-sm font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             <Save className="w-4 h-4" />
-            {saving ? 'Saving...' : 'Save'}
+            {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </div>

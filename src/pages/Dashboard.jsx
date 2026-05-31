@@ -1,20 +1,97 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import AppLayout from '../components/AppLayout';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import ConversationList from '../components/ConversationList';
 import ChatWindow from '../components/ChatWindow';
 import FriendsPanel from '../components/FriendsPanel';
 import CreateGroup from '../components/CreateGroup';
 import UserProfile from '../components/UserProfile';
 import { useConversations } from '../hooks/useConversations';
-import { useFriends } from '../hooks/useFriends';
+
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('dms');
   const [selectedConvoId, setSelectedConvoId] = useState(null);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [showFriendsPanel, setShowFriendsPanel] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const { conversations, loading: convosLoading, createDM } = useConversations();
-  const { friends } = useFriends();
+  const { conversations, createDM, updateLastRead } = useConversations();
+  const { user } = useAuth();
+  
+  const selectedConvoIdRef = useRef(selectedConvoId);
+  const conversationsRef = useRef(conversations);
+
+  useEffect(() => {
+    selectedConvoIdRef.current = selectedConvoId;
+    if (selectedConvoId) {
+      updateLastRead(selectedConvoId);
+    }
+  }, [selectedConvoId, updateLastRead]);
+
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
+
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('global-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+        },
+        async (payload) => {
+          const newMsg = payload.new;
+
+          if (newMsg.sender_id === user.id) return;
+          if (newMsg.conversation_id === selectedConvoIdRef.current) {
+            updateLastRead(selectedConvoIdRef.current);
+            return;
+          }
+
+          const convo = conversationsRef.current.find(c => c.id === newMsg.conversation_id);
+          if (!convo) return;
+
+          const { data: senderData } = await supabase
+            .from('users')
+            .select('display_name, username')
+            .eq('id', newMsg.sender_id)
+            .single();
+            
+          const senderName = senderData?.display_name || senderData?.username || 'Someone';
+
+          if ('Notification' in window && Notification.permission === 'granted') {
+            const title = convo.is_group 
+              ? `${senderName} in ${convo.displayName}`
+              : senderName;
+            
+            const notification = new Notification(title, {
+              body: newMsg.content || 'Sent an attachment',
+            });
+            
+            notification.onclick = () => {
+              window.focus();
+            };
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, updateLastRead]);
 
   // Filter conversations by tab
   const filteredConvos = conversations.filter((c) =>
@@ -36,8 +113,9 @@ export default function Dashboard() {
   const handleNewChat = useCallback(async () => {
     if (activeTab === 'groups') {
       setShowCreateGroup(true);
+    } else if (activeTab === 'dms') {
+      setShowFriendsPanel(true);
     }
-    // For DMs, the user goes to Friends panel and clicks a friend
   }, [activeTab]);
 
   const handleStartDM = useCallback(async (friendId) => {
@@ -45,6 +123,7 @@ export default function Dashboard() {
       const convoId = await createDM(friendId);
       setActiveTab('dms');
       setSelectedConvoId(convoId);
+      setShowFriendsPanel(false);
     } catch (err) {
       console.error('Failed to start DM:', err);
     }
@@ -58,11 +137,9 @@ export default function Dashboard() {
   return (
     <>
       <AppLayout activeTab={activeTab} onTabChange={handleTabChange}>
-        <div className="flex h-full w-full overflow-hidden">
-          {/* Middle panel: changes based on tab */}
-          {activeTab === 'friends' ? (
-            <FriendsPanel onStartDM={handleStartDM} />
-          ) : (
+        <div className="flex h-full w-full overflow-hidden pb-[60px] md:pb-0">
+          {/* Middle panel */}
+          <div className={`h-full w-full md:w-80 flex-shrink-0 border-r border-[#1e1e1e] bg-[#0a0a0a] ${selectedConvoId ? 'hidden md:block' : 'block'}`}>
             <ConversationList
               conversations={filteredConvos}
               selectedId={selectedConvoId}
@@ -70,18 +147,29 @@ export default function Dashboard() {
               onNewChat={handleNewChat}
               activeTab={activeTab}
             />
-          )}
+          </div>
 
           {/* Main chat area */}
-          <ChatWindow
-            conversationId={selectedConvoId}
-            conversationName={selectedConvo?.displayName}
-            isGroup={selectedConvo?.is_group}
-          />
+          <div className={`h-full flex-1 min-w-0 bg-[#050505] ${selectedConvoId ? 'block' : 'hidden md:block'}`}>
+            <ChatWindow
+              conversationId={selectedConvoId}
+              conversationName={selectedConvo?.displayName}
+              conversationAvatar={selectedConvo?.displayAvatar}
+              isGroup={selectedConvo?.is_group}
+              participants={selectedConvo?.conversation_participants}
+              onBack={() => setSelectedConvoId(null)}
+            />
+          </div>
         </div>
       </AppLayout>
 
       {/* Modals */}
+      {showFriendsPanel && (
+        <FriendsPanel
+          onStartDM={handleStartDM}
+          onClose={() => setShowFriendsPanel(false)}
+        />
+      )}
       {showCreateGroup && (
         <CreateGroup
           onClose={() => setShowCreateGroup(false)}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -77,7 +77,9 @@ export default function Auth() {
       <div className="w-full max-w-sm relative z-10">
         {/* Logo */}
         <div className="flex flex-col items-center mb-10">
-          <img src="/logo1.png" alt="Blackroom" className="w-16 h-16 rounded-xl mb-5 shadow-lg shadow-black/50" />
+          <div className="w-16 h-16 rounded-xl mb-5 flex items-center justify-center bg-gradient-to-br from-[#a78bfa] to-[#c4b5fd] shadow-lg shadow-[#a78bfa]/20">
+            <span className="text-3xl font-black text-black tracking-tighter">B</span>
+          </div>
           <h1 className="text-2xl font-bold tracking-tight text-[#e4e4e7]">
             {isLogin ? 'Welcome back' : 'Create your account'}
           </h1>
@@ -87,48 +89,48 @@ export default function Auth() {
         </div>
 
         {/* Card */}
-        <div className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-2xl p-6 shadow-xl">
+        <div className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-3xl px-8 py-10 shadow-2xl">
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl mb-5 text-sm">
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl mb-6 text-sm font-medium">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleAuth} className="space-y-4">
+          <form onSubmit={handleAuth} className="flex flex-col gap-5">
             {!isLogin && (
-              <div>
-                <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5 ml-0.5">Username</label>
+              <div className="flex flex-col gap-2">
+                <label className="text-[11px] font-bold uppercase tracking-widest text-[#71717a] ml-1">Username</label>
                 <input
                   type="text"
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-[#111] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm text-white placeholder-[#52525b] focus:outline-none focus:border-[#6366f1] focus:ring-1 focus:ring-[#6366f1]/30 transition-all"
+                  className="w-full bg-[#111] border border-[#2a2a2a] rounded-xl px-4 py-3 text-[15px] text-white placeholder-[#52525b] focus:outline-none focus:border-[#a78bfa] focus:ring-1 focus:ring-[#a78bfa]/30 transition-all"
                   placeholder="Choose a unique username"
                 />
               </div>
             )}
 
-            <div>
-              <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5 ml-0.5">Email</label>
+            <div className="flex flex-col gap-2">
+              <label className="text-[11px] font-bold uppercase tracking-widest text-[#71717a] ml-1">Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-[#111] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm text-white placeholder-[#52525b] focus:outline-none focus:border-[#6366f1] focus:ring-1 focus:ring-[#6366f1]/30 transition-all"
+                className="w-full bg-[#111] border border-[#2a2a2a] rounded-xl px-4 py-3 text-[15px] text-white placeholder-[#52525b] focus:outline-none focus:border-[#a78bfa] focus:ring-1 focus:ring-[#a78bfa]/30 transition-all"
                 placeholder="you@email.com"
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-[#a1a1aa] mb-1.5 ml-0.5">Password</label>
+            <div className="flex flex-col gap-2">
+              <label className="text-[11px] font-bold uppercase tracking-widest text-[#71717a] ml-1">Password</label>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#111] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm text-white placeholder-[#52525b] focus:outline-none focus:border-[#6366f1] focus:ring-1 focus:ring-[#6366f1]/30 transition-all"
+                className="w-full bg-[#111] border border-[#2a2a2a] rounded-xl px-4 py-3 text-[15px] text-white placeholder-[#52525b] focus:outline-none focus:border-[#a78bfa] focus:ring-1 focus:ring-[#a78bfa]/30 transition-all"
                 placeholder="••••••••"
                 minLength={6}
               />
@@ -137,7 +139,7 @@ export default function Auth() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#6366f1] hover:bg-[#818cf8] text-white rounded-xl py-3 mt-2 font-semibold text-sm transition-all disabled:opacity-50 disabled:hover:bg-[#6366f1] shadow-lg shadow-[#6366f1]/20"
+              className="w-full bg-[#a78bfa] hover:bg-[#c4b5fd] text-white rounded-xl py-3.5 mt-4 font-bold text-[15px] transition-all disabled:opacity-50 disabled:hover:bg-[#a78bfa] shadow-lg shadow-[#a78bfa]/20 flex items-center justify-center"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -158,9 +160,9 @@ export default function Auth() {
             className="text-[#52525b] hover:text-[#a1a1aa] text-sm transition-colors"
           >
             {isLogin ? (
-              <>Don't have an account? <span className="text-[#6366f1] font-medium">Sign Up</span></>
+              <>Don&apos;t have an account? <span className="text-[#a78bfa] font-medium">Sign Up</span></>
             ) : (
-              <>Already have an account? <span className="text-[#6366f1] font-medium">Sign In</span></>
+              <>Already have an account? <span className="text-[#a78bfa] font-medium">Sign In</span></>
             )}
           </button>
         </div>

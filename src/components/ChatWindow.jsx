@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   Reply,
   SmilePlus,
@@ -8,7 +8,6 @@ import {
   CheckCheck,
   ArrowLeft,
   Copy,
-  Pencil,
   Trash2,
   Play,
   Pause,
@@ -109,7 +108,7 @@ function AudioPlayer({ src }) {
       </button>
       <div className="flex-1 h-1 bg-[#1e1e1e] rounded-full overflow-hidden">
         <div
-          className="h-full bg-indigo-500 rounded-full transition-[width] duration-150"
+          className="h-full bg-violet-400 rounded-full transition-[width] duration-150"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -123,15 +122,17 @@ function MessageBubble({
   message,
   isOwn,
   isGroup,
-  repliedMessage,
-  onReply,
+  showAvatar,
   onReact,
-  onOpenMedia,
   onDelete,
-  currentUserId,
+  onReply,
+  onOpenMedia,
+  repliedMessage,
+  isLastOwn,
+  isRead,
 }) {
-  const [hovered, setHovered] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const { user } = useAuth();
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [emojiAnchor, setEmojiAnchor] = useState({ top: 0, left: 0 });
   const actionBarRef = useRef(null);
@@ -163,131 +164,154 @@ function MessageBubble({
     setShowMore(false);
   }, [message.id, onDelete]);
 
-  const reactions = message.reactions || {};
-  const reactionEntries = Object.entries(reactions);
+  const reactionsList = message.reactions || [];
+  const reactionGroups = reactionsList.reduce((acc, r) => {
+    if (!acc[r.emoji]) acc[r.emoji] = { count: 0, users: [] };
+    acc[r.emoji].count += 1;
+    acc[r.emoji].users.push(r.user_id);
+    return acc;
+  }, {});
+  const reactionEntries = Object.entries(reactionGroups);
+  
+  const isMediaOnly = message.media_url && !message.content;
 
   return (
     <div
-      className={`group flex gap-2.5 max-w-full ${isOwn ? 'justify-end' : 'justify-start'}`}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => {
-        setHovered(false);
-        setShowMore(false);
-      }}
+      className={`group flex gap-2.5 max-w-full relative ${isOwn ? 'justify-end' : 'justify-start'}`}
+      onMouseLeave={() => setShowMore(false)}
     >
-      {/* Left-side avatar for others in groups */}
-      {!isOwn && isGroup && (
+      {!isOwn && (
         <div className="shrink-0 mt-auto">
-          {message.sender_avatar ? (
-            <img
-              src={message.sender_avatar}
-              alt=""
-              className="w-8 h-8 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-[#1e1e1e] flex items-center justify-center text-xs text-gray-500 font-medium">
-              {(message.sender_username || '?')[0].toUpperCase()}
-            </div>
-          )}
+          {showAvatar ? (
+            message.sender_avatar ? (
+              <img src={message.sender_avatar} alt="" className="w-8 h-8 rounded-full object-cover" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-[#1e1e1e] flex items-center justify-center text-xs text-gray-500 font-medium">
+                {(message.sender_username || '?')[0].toUpperCase()}
+              </div>
+            )
+          ) : <div className="w-8" />}
         </div>
       )}
 
       <div className={`relative flex flex-col ${isOwn ? 'items-end' : 'items-start'} max-w-[70%]`}>
-        {/* Sender name in groups */}
         {!isOwn && isGroup && (
           <span className="text-[11px] text-gray-500 mb-1 ml-1 font-medium">
             {message.sender_username || 'Unknown'}
           </span>
         )}
 
-        {/* Reply preview */}
         {repliedMessage && (
-          <div className="mb-1 px-3 py-1.5 text-[11px] rounded-lg bg-white/5 border-l-2 border-indigo-500/60 text-gray-400 max-w-full truncate">
-            <span className="text-indigo-400 font-medium mr-1">
-              {repliedMessage.sender_username || 'User'}
+          <div className="flex flex-col gap-0.5 mb-1 px-3 py-2 rounded-2xl bg-white/5 border border-white/5">
+            <div className="flex items-center gap-1.5">
+              <Reply className="w-3.5 h-3.5 text-gray-400" />
+              <span className="text-xs text-gray-400 font-medium">
+                {isOwn ? 'You replied' : `Replied to ${repliedMessage.sender_username || 'message'}`}
+              </span>
+            </div>
+            <span className="text-xs text-gray-500 truncate max-w-[150px] italic">
+              {repliedMessage.content}
             </span>
-            {repliedMessage.content || '📎 Media'}
           </div>
         )}
 
-        {/* Bubble */}
         <div
-          className={`relative rounded-2xl px-4 py-2.5 text-sm leading-relaxed break-words
+          className={`relative break-words
             ${
-              isOwn
-                ? 'bg-indigo-600/20 text-white border border-indigo-500/20'
-                : 'bg-[#111] text-gray-200 border border-[#1e1e1e]'
+              isMediaOnly
+                ? ''
+                : `rounded-3xl px-4 py-2.5 text-[15px] leading-relaxed ${
+                    isOwn ? 'bg-[#a78bfa] text-white' : 'bg-[#262626] text-white'
+                  }`
             }`}
         >
-          {/* Media */}
+          {showMore && (
+            <div className={`absolute top-0 -mt-8 flex gap-1.5 p-1.5 bg-[#1a1a1a] rounded-full border border-white/10 shadow-lg z-20 ${isOwn ? 'right-0' : 'left-0'}`}>
+              {['👍', '❤️', '😂', '🔥', '😮', '😢'].map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={(e) => { e.stopPropagation(); onReact(message.id, emoji); setShowMore(false); }}
+                  className="text-[15px] hover:scale-125 hover:-translate-y-1 transition-all duration-200 cursor-pointer px-1"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          )}
+
           {message.media_url && message.media_type === 'image' && (
             <img
               src={message.media_url}
               alt=""
               onClick={() => onOpenMedia(message.media_url, 'image')}
-              className="max-h-80 rounded-xl mb-2 cursor-pointer hover:opacity-90 transition-opacity"
+              className={`max-h-80 cursor-pointer hover:opacity-90 transition-opacity ${!isMediaOnly ? 'rounded-xl mb-2' : 'rounded-3xl'}`}
             />
           )}
           {message.media_url && message.media_type === 'video' && (
             <video
               src={message.media_url}
               controls
-              className="max-h-80 rounded-xl mb-2 max-w-full"
+              className={`max-h-80 max-w-full ${!isMediaOnly ? 'rounded-xl mb-2' : 'rounded-3xl'}`}
             />
           )}
           {message.media_url && message.media_type === 'audio' && (
-            <div className="mb-2">
+            <div className={!isMediaOnly ? 'mb-2' : ''}>
               <AudioPlayer src={message.media_url} />
             </div>
           )}
 
-          {/* Text content */}
           {message.content && <p className="whitespace-pre-wrap">{message.content}</p>}
 
-          {/* Timestamp on hover */}
           <span
-            className={`text-[10px] font-mono text-gray-600 mt-1 transition-opacity duration-200
-              ${hovered ? 'opacity-100' : 'opacity-0'} flex items-center gap-1 ${isOwn ? 'justify-end' : ''}`}
+            className={`text-[10px] font-mono text-gray-400 mt-1 transition-opacity duration-200
+              ${showMore ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} flex items-center gap-1 ${isOwn ? 'justify-end' : ''}`}
           >
             {formatTime(message.created_at)}
             {isOwn && (
-              message.read
-                ? <CheckCheck size={12} className="text-indigo-400" />
+              isRead
+                ? <CheckCheck size={12} className="text-violet-300" />
                 : <Check size={12} />
             )}
           </span>
         </div>
 
-        {/* Reactions */}
         {reactionEntries.length > 0 && (
-          <div className="flex gap-1 mt-1 flex-wrap">
-            {reactionEntries.map(([emoji, users]) => (
-              <button
-                key={emoji}
-                onClick={() => onReact(message.id, emoji)}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs
-                  border transition-colors cursor-pointer
-                  ${
-                    Array.isArray(users) && users.includes(currentUserId)
-                      ? 'bg-indigo-600/20 border-indigo-500/30 text-indigo-300'
-                      : 'bg-[#111] border-[#2a2a2a] text-gray-400 hover:border-[#3a3a3a]'
-                  }`}
-              >
-                <span>{emoji}</span>
-                <span>{Array.isArray(users) ? users.length : users}</span>
-              </button>
-            ))}
+          <div className={`flex flex-wrap gap-1 mt-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+            {reactionEntries.map(([emoji, data]) => {
+              const hasReacted = data.users.includes(user?.id);
+              return (
+                <button
+                  key={emoji}
+                  onClick={() => onReact(message.id, emoji)}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium transition-colors
+                    ${
+                      hasReacted
+                        ? 'bg-[#a78bfa]/20 text-[#a78bfa] border border-[#a78bfa]/30'
+                        : 'bg-[#1e1e1e] text-gray-400 border border-white/5 hover:bg-[#2a2a2a]'
+                    }`}
+                >
+                  <span>{emoji}</span>
+                  {data.count > 1 && <span>{data.count}</span>}
+                </button>
+              );
+            })}
           </div>
         )}
 
-        {/* Floating action bar on hover */}
-        {hovered && (
-          <div
-            ref={actionBarRef}
-            className={`absolute -top-9 flex items-center gap-0.5 px-1 py-0.5
-              bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg shadow-lg shadow-black/40 z-20
-              ${isOwn ? 'right-0' : 'left-0'}`}
-          >
+        {isOwn && isLastOwn && isRead && (
+          <div className="mt-1 flex justify-end">
+            <span className="text-[11px] font-medium text-gray-500">Seen</span>
+          </div>
+        )}
+
+        <div
+          ref={actionBarRef}
+          className={`absolute -top-9 flex items-center gap-0.5 px-1 py-0.5
+            bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg shadow-lg shadow-black/40 z-20 transition-all duration-150
+            before:absolute before:-bottom-4 before:left-0 before:right-0 before:h-4 before:bg-transparent
+            ${showMore ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'}
+            ${isOwn ? 'right-0' : 'left-0'}`}
+        >
             <button
               onClick={() => onReply(message)}
               className="p-1.5 rounded hover:bg-white/10 text-gray-500 hover:text-white transition-colors cursor-pointer"
@@ -335,9 +359,7 @@ function MessageBubble({
               )}
             </div>
           </div>
-        )}
 
-        {/* Emoji picker */}
         {showEmojiPicker && (
           <EmojiPicker
             position={emojiAnchor}
@@ -392,6 +414,7 @@ export default function ChatWindow({
   conversationName,
   conversationAvatar,
   isGroup,
+  participants,
   onBack,
 }) {
   const { user } = useAuth();
@@ -406,6 +429,23 @@ export default function ChatWindow({
   const scrollContainerRef = useRef(null);
   const isNearBottom = useRef(true);
 
+  // ─ Scroll handling ──────────────────────────────────────────────────────
+  const scrollToBottom = useCallback((behavior = 'smooth') => {
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior });
+    }, 50);
+    setShowScrollButton(false);
+  }, []);
+
+  const handleScroll = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const threshold = 120;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+    isNearBottom.current = atBottom;
+    setShowScrollButton(!atBottom);
+  }, []);
+
   // ─ Fetch messages with sender info ──────────────────────────────────────
   useEffect(() => {
     if (!conversationId) return;
@@ -413,11 +453,12 @@ export default function ChatWindow({
     let cancelled = false;
 
     const fetchMessages = async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('messages')
         .select(`
           *,
-          sender:users!sender_id ( id, username, avatar_url )
+          sender:users!sender_id ( id, username, avatar_url ),
+          reactions:message_reactions ( id, emoji, user_id, message_id )
         `)
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
@@ -437,7 +478,7 @@ export default function ChatWindow({
     return () => {
       cancelled = true;
     };
-  }, [conversationId]);
+  }, [conversationId, scrollToBottom]);
 
   // ─ Fetch member count for groups ────────────────────────────────────────
   useEffect(() => {
@@ -471,7 +512,6 @@ export default function ChatWindow({
         async (payload) => {
           const newMsg = payload.new;
 
-          // Fetch sender info
           const { data: senderData } = await supabase
             .from('users')
             .select('id, username, avatar_url')
@@ -485,7 +525,6 @@ export default function ChatWindow({
           };
 
           setMessages((prev) => {
-            // Avoid duplicates
             if (prev.some((m) => m.id === enriched.id)) return prev;
             return [...prev, enriched];
           });
@@ -497,12 +536,43 @@ export default function ChatWindow({
           }
         }
       )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'message_reactions' },
+        (payload) => {
+          setMessages((prev) =>
+            prev.map((m) => {
+              if (m.id === payload.new.message_id) {
+                const existing = m.reactions || [];
+                if (existing.some(r => r.id === payload.new.id)) return m;
+                return { ...m, reactions: [...existing, payload.new] };
+              }
+              return m;
+            })
+          );
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'message_reactions' },
+        (payload) => {
+          setMessages((prev) =>
+            prev.map((m) => {
+              if (m.id === payload.old.message_id) {
+                const existing = m.reactions || [];
+                return { ...m, reactions: existing.filter(r => r.id !== payload.old.id) };
+              }
+              return m;
+            })
+          );
+        }
+      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId]);
+  }, [conversationId, scrollToBottom]);
 
   // ─ Typing indicator subscription ────────────────────────────────────────
   useEffect(() => {
@@ -525,22 +595,6 @@ export default function ChatWindow({
     };
   }, [conversationId, user?.id]);
 
-  // ─ Scroll handling ──────────────────────────────────────────────────────
-  const scrollToBottom = useCallback((behavior = 'smooth') => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior });
-    }, 50);
-    setShowScrollButton(false);
-  }, []);
-
-  const handleScroll = useCallback(() => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-    const threshold = 120;
-    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
-    isNearBottom.current = atBottom;
-    setShowScrollButton(!atBottom);
-  }, []);
 
   // ─ Message actions ──────────────────────────────────────────────────────
   const handleReply = useCallback((msg) => {
@@ -553,53 +607,46 @@ export default function ChatWindow({
 
   const handleReact = useCallback(
     async (messageId, emoji) => {
-      if (!user) return;
-
-      // Optimistic update
-      setMessages((prev) =>
-        prev.map((m) => {
-          if (m.id !== messageId) return m;
-          const reactions = { ...(m.reactions || {}) };
-          const users = Array.isArray(reactions[emoji]) ? [...reactions[emoji]] : [];
-
-          if (users.includes(user.id)) {
-            // Toggle off
-            const filtered = users.filter((u) => u !== user.id);
-            if (filtered.length === 0) {
-              delete reactions[emoji];
-            } else {
-              reactions[emoji] = filtered;
-            }
-          } else {
-            reactions[emoji] = [...users, user.id];
-          }
-
-          return { ...m, reactions };
-        })
+      const message = messages.find((m) => m.id === messageId);
+      if (!message) return;
+      const existingReaction = (message.reactions || []).find(
+        (r) => r.emoji === emoji && r.user_id === user.id
       );
 
-      // Find the message to get current reactions from state
-      const msg = messages.find((m) => m.id === messageId);
-      const currentReactions = { ...(msg?.reactions || {}) };
-      const currentUsers = Array.isArray(currentReactions[emoji]) ? [...currentReactions[emoji]] : [];
-
-      if (currentUsers.includes(user.id)) {
-        const filtered = currentUsers.filter((u) => u !== user.id);
-        if (filtered.length === 0) {
-          delete currentReactions[emoji];
-        } else {
-          currentReactions[emoji] = filtered;
-        }
+      if (existingReaction) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === messageId
+              ? { ...m, reactions: (m.reactions || []).filter((r) => r.id !== existingReaction.id) }
+              : m
+          )
+        );
+        await supabase.from('message_reactions').delete().eq('id', existingReaction.id);
       } else {
-        currentReactions[emoji] = [...currentUsers, user.id];
+        const tempId = Math.random().toString();
+        const newReaction = { id: tempId, message_id: messageId, user_id: user.id, emoji };
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === messageId ? { ...m, reactions: [...(m.reactions || []), newReaction] } : m
+          )
+        );
+        const { data } = await supabase
+          .from('message_reactions')
+          .insert({ message_id: messageId, user_id: user.id, emoji })
+          .select()
+          .single();
+        if (data) {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === messageId
+                ? { ...m, reactions: (m.reactions || []).map((r) => (r.id === tempId ? data : r)) }
+                : m
+            )
+          );
+        }
       }
-
-      await supabase
-        .from('messages')
-        .update({ reactions: currentReactions })
-        .eq('id', messageId);
     },
-    [user, messages]
+    [messages, user.id]
   );
 
   const handleDelete = useCallback(async (messageId) => {
@@ -607,11 +654,16 @@ export default function ChatWindow({
     await supabase.from('messages').delete().eq('id', messageId);
   }, []);
 
-  const handleOpenMedia = useCallback((url, type) => {
-    setMediaViewer({ url, type });
-  }, []);
+  // ─ Computed properties ──────────────────────────────────────────────────
+  const lastOwnMessageId = useMemo(() => {
+    return messages.filter(m => m.sender_id === user?.id).pop()?.id;
+  }, [messages, user?.id]);
 
-  // ─ Build replied-message lookup ─────────────────────────────────────────
+  const otherParticipant = useMemo(() => {
+    if (isGroup || !participants) return null;
+    return participants.find(p => p.user_id !== user?.id);
+  }, [isGroup, participants, user?.id]);
+
   const messageMap = {};
   for (const m of messages) {
     messageMap[m.id] = m;
@@ -632,11 +684,10 @@ export default function ChatWindow({
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-[#050505] h-full relative">
+    <div className="flex flex-col h-full bg-[#0a0a0a] relative">
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <div className="shrink-0 flex items-center gap-3 px-4 sm:px-6 py-3 border-b border-[#1e1e1e]
                       bg-[#0a0a0a]/80 backdrop-blur-md z-20">
-        {/* Back button (mobile) */}
         {onBack && (
           <button
             onClick={onBack}
@@ -647,7 +698,6 @@ export default function ChatWindow({
           </button>
         )}
 
-        {/* Avatar */}
         {conversationAvatar ? (
           <img
             src={conversationAvatar}
@@ -687,7 +737,6 @@ export default function ChatWindow({
       >
         {dateGroups.map((group) => (
           <div key={group.label}>
-            {/* Date divider */}
             <div className="flex items-center gap-4 my-4">
               <div className="flex-1 h-px bg-[#1e1e1e]" />
               <span className="text-[10px] font-mono text-gray-600 uppercase tracking-wider">
@@ -696,20 +745,22 @@ export default function ChatWindow({
               <div className="flex-1 h-px bg-[#1e1e1e]" />
             </div>
 
-            {/* Messages in this date group */}
             <div className="space-y-2.5">
-              {group.messages.map((msg) => (
+              {group.messages.map((msg, idx) => (
                 <MessageBubble
                   key={msg.id}
                   message={msg}
                   isOwn={msg.sender_id === user?.id}
                   isGroup={isGroup}
-                  repliedMessage={msg.reply_to ? messageMap[msg.reply_to] : null}
-                  onReply={handleReply}
+                  showAvatar={isGroup && (idx === 0 || group.messages[idx - 1].sender_id !== msg.sender_id)}
                   onReact={handleReact}
-                  onOpenMedia={handleOpenMedia}
+                  onCopy={() => {}}
                   onDelete={handleDelete}
-                  currentUserId={user?.id}
+                  onReply={handleReply}
+                  onOpenMedia={(url, type) => setMediaViewer({ url, type })}
+                  repliedMessage={msg.reply_to ? messageMap[msg.reply_to] : null}
+                  isLastOwn={msg.id === lastOwnMessageId}
+                  isRead={otherParticipant?.last_read_at && new Date(msg.created_at) <= new Date(otherParticipant.last_read_at)}
                 />
               ))}
             </div>

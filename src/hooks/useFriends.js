@@ -53,8 +53,9 @@ export function useFriends() {
     fetchFriendships();
 
     // Subscribe to friendship changes
+    const channelName = `friendships_changes_${Math.random().toString(36).substring(7)}`;
     const channel = supabase
-      .channel('friendships_changes')
+      .channel(channelName)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',

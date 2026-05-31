@@ -41,8 +41,9 @@ export function useMessages(conversationId) {
     if (!conversationId) return;
 
     // Subscribe to new messages
+    const channelName = `messages_${conversationId}_${Math.random().toString(36).substring(7)}`;
     const channel = supabase
-      .channel(`messages_${conversationId}`)
+      .channel(channelName)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',

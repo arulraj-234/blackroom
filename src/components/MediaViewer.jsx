@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Download } from 'lucide-react';
 
 export default function MediaViewer({ mediaUrl, mediaType, onClose }) {

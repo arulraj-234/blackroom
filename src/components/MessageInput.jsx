@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Paperclip, Smile, SendHorizonal, X, Image, Film, Music } from 'lucide-react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { Paperclip, Smile, SendHorizonal, X, Image, Film, Music, Mic, Square } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import EmojiPicker from './EmojiPicker';
@@ -13,6 +13,12 @@ export default function MessageInput({ conversationId, replyingTo, onCancelReply
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showEmoji, setShowEmoji] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
+  const recordingIntervalRef = useRef(null);
 
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -175,6 +181,55 @@ export default function MessageInput({ conversationId, replyingTo, onCancelReply
     await supabase.from('messages').insert(messagePayload);
   }, [content, file, conversationId, user, replyingTo, uploadFile, clearFile, onCancelReply]);
 
+  // Voice Recording
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      chunksRef.current = [];
+
+      mediaRecorderRef.current.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+        const mimeType = mediaRecorderRef.current.mimeType || 'audio/webm';
+        const blob = new Blob(chunksRef.current, { type: mimeType });
+        let ext = 'webm';
+        if (mimeType.includes('mp4')) ext = 'mp4';
+        else if (mimeType.includes('ogg')) ext = 'ogg';
+        
+        const fileObj = new File([blob], `voice_message.${ext}`, { type: mimeType });
+        handleFileSelect(fileObj);
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+      setRecordingDuration(0);
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingDuration((prev) => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.error('Microphone error:', err);
+      alert('Could not access microphone. Please check permissions.');
+    }
+  }, [handleFileSelect]);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      clearInterval(recordingIntervalRef.current);
+    }
+  }, [isRecording]);
+
+  const formatDuration = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
   // Keyboard handling
   const handleKeyDown = useCallback(
     (e) => {
@@ -203,7 +258,7 @@ export default function MessageInput({ conversationId, replyingTo, onCancelReply
   );
 
   const fileTypeIcon = {
-    image: <Image size={16} className="text-indigo-400" />,
+    image: <Image size={16} className="text-violet-300" />,
     video: <Film size={16} className="text-pink-400" />,
     audio: <Music size={16} className="text-green-400" />,
     file: <Paperclip size={16} className="text-gray-400" />,
@@ -212,7 +267,7 @@ export default function MessageInput({ conversationId, replyingTo, onCancelReply
   return (
     <div
       className={`border-t border-[#1e1e1e] bg-[#0a0a0a] transition-colors
-                  ${isDragOver ? 'bg-indigo-500/5 border-indigo-500/30' : ''}`}
+                  ${isDragOver ? 'bg-violet-400/5 border-violet-400/30' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -220,8 +275,8 @@ export default function MessageInput({ conversationId, replyingTo, onCancelReply
       {/* Reply preview bar */}
       {replyingTo && (
         <div className="flex items-center gap-3 px-4 pt-3">
-          <div className="flex-1 flex items-center gap-2 px-3 py-2 bg-[#111] rounded-lg border-l-2 border-indigo-500">
-            <span className="text-xs text-indigo-400 font-medium truncate">
+          <div className="flex-1 flex items-center gap-2 px-3 py-2 bg-[#111] rounded-lg border-l-2 border-violet-400">
+            <span className="text-xs text-violet-300 font-medium truncate">
               Replying to {replyingTo.sender_username || 'message'}
             </span>
             <span className="text-xs text-gray-500 truncate max-w-[200px]">
@@ -271,7 +326,7 @@ export default function MessageInput({ conversationId, replyingTo, onCancelReply
         <div className="px-4 pt-2">
           <div className="h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
             <div
-              className="h-full bg-indigo-500 rounded-full transition-all duration-200"
+              className="h-full bg-violet-400 rounded-full transition-all duration-200"
               style={{ width: `${uploadProgress}%` }}
             />
           </div>
@@ -305,9 +360,9 @@ export default function MessageInput({ conversationId, replyingTo, onCancelReply
           onKeyDown={handleKeyDown}
           placeholder="Message…"
           rows={1}
-          className="flex-1 resize-none bg-[#111] border border-[#2a2a2a] rounded-2xl
-                     px-4 py-3 text-sm text-white placeholder-gray-600
-                     focus:outline-none focus:border-[#3a3a3a] focus:ring-1 focus:ring-white/5
+          className="flex-1 resize-none bg-[#262626] border-transparent rounded-3xl
+                     px-4 py-3 text-[15px] text-white placeholder-[#71717a]
+                     focus:outline-none focus:ring-0
                      transition-all leading-relaxed"
           style={{ minHeight: '44px' }}
         />
@@ -323,13 +378,35 @@ export default function MessageInput({ conversationId, replyingTo, onCancelReply
           <Smile size={20} />
         </button>
 
+        {/* Mic button */}
+        {isRecording ? (
+          <button
+            onClick={stopRecording}
+            className="p-2.5 rounded-xl text-red-500 hover:bg-red-500/10
+                       transition-colors shrink-0 cursor-pointer flex items-center gap-2"
+            title="Stop recording"
+          >
+            <Square size={16} fill="currentColor" />
+            <span className="text-xs font-medium animate-pulse">{formatDuration(recordingDuration)}</span>
+          </button>
+        ) : (
+          <button
+            onClick={startRecording}
+            className="p-2.5 rounded-xl text-gray-500 hover:text-white hover:bg-white/5
+                       transition-colors shrink-0 cursor-pointer"
+            title="Record voice message"
+          >
+            <Mic size={20} />
+          </button>
+        )}
+
         {/* Send button */}
         <button
           onClick={handleSend}
           disabled={(!content.trim() && !file) || uploading}
-          className="p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500
+          className="p-2.5 rounded-xl bg-violet-500 hover:bg-violet-400
                      text-white transition-all shrink-0
-                     disabled:opacity-30 disabled:hover:bg-indigo-600 cursor-pointer"
+                     disabled:opacity-30 disabled:hover:bg-violet-500 cursor-pointer"
           title="Send"
         >
           <SendHorizonal size={20} />
@@ -349,7 +426,7 @@ export default function MessageInput({ conversationId, replyingTo, onCancelReply
       {isDragOver && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none rounded-lg">
           <div className="text-center">
-            <Image size={40} className="mx-auto mb-2 text-indigo-400" />
+            <Image size={40} className="mx-auto mb-2 text-violet-300" />
             <p className="text-sm text-gray-300">Drop file to attach</p>
           </div>
         </div>

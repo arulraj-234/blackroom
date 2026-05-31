@@ -20,6 +20,7 @@ create table public.conversation_participants (
   conversation_id uuid references public.conversations on delete cascade not null,
   user_id uuid references public.users on delete cascade not null,
   joined_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  last_read_at timestamp with time zone default timezone('utc'::text, now()),
   primary key (conversation_id, user_id)
 );
 
@@ -73,3 +74,36 @@ create policy "Users can insert participants." on public.conversation_participan
 
 -- 8. Users can view participants
 create policy "Users can view participants." on public.conversation_participants for select using (true);
+
+-- Create message_reactions table
+create table public.message_reactions (
+  id uuid default gen_random_uuid() primary key,
+  message_id uuid references public.messages on delete cascade not null,
+  user_id uuid references public.users on delete cascade not null,
+  emoji text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique (message_id, user_id, emoji)
+);
+
+alter table public.message_reactions enable row level security;
+
+create policy "Users can view reactions in their conversations." on public.message_reactions for select using (
+  exists (
+    select 1 from public.messages m
+    join public.conversation_participants cp on cp.conversation_id = m.conversation_id
+    where m.id = public.message_reactions.message_id and cp.user_id = auth.uid()
+  )
+);
+
+create policy "Users can insert their own reactions." on public.message_reactions for insert with check (
+  auth.uid() = user_id and
+  exists (
+    select 1 from public.messages m
+    join public.conversation_participants cp on cp.conversation_id = m.conversation_id
+    where m.id = public.message_reactions.message_id and cp.user_id = auth.uid()
+  )
+);
+
+create policy "Users can delete their own reactions." on public.message_reactions for delete using (
+  auth.uid() = user_id
+);

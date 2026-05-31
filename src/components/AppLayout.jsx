@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { MessageCircle, Users, UserPlus, Settings } from 'lucide-react';
+import { MessageCircle, Users, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const TABS = [
@@ -8,14 +8,10 @@ const TABS = [
 ];
 
 const BOTTOM_ACTIONS = [
-  { id: 'friends', icon: UserPlus, label: 'Friends' },
-  { id: 'settings', icon: Settings, label: 'Settings' },
+  { id: 'profile', icon: User, label: 'Profile' },
 ];
 
-function getInitials(user) {
-  if (!user) return '?';
-  const meta = user.user_metadata || {};
-  const name = meta.display_name || meta.full_name || meta.username || user.email || '';
+function getInitials(name) {
   if (!name) return '?';
   const parts = name.trim().split(/\s+/);
   if (parts.length >= 2) {
@@ -73,14 +69,14 @@ function SidebarButton({ icon: Icon, label, isActive, onClick }) {
         className="relative w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-150 group"
         style={{
           background: isActive ? 'rgba(99, 102, 241, 0.12)' : 'transparent',
-          color: isActive ? '#818cf8' : '#a1a1aa',
+          color: isActive ? '#c4b5fd' : '#a1a1aa',
         }}
       >
         {/* Active indicator bar */}
         {isActive && (
           <span
             className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
-            style={{ background: '#6366f1', left: '-8px' }}
+            style={{ background: '#a78bfa', left: '-8px' }}
           />
         )}
         <Icon size={20} strokeWidth={isActive ? 2.2 : 1.8} />
@@ -90,19 +86,34 @@ function SidebarButton({ icon: Icon, label, isActive, onClick }) {
 }
 
 function UserAvatar({ user, onClick }) {
-  const initials = getInitials(user);
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchProfile = async () => {
+      const { supabase } = await import('../lib/supabase');
+      const { data } = await supabase.from('users').select('username, display_name, avatar_url').eq('id', user.id).single();
+      if (data) setProfile(data);
+    };
+    fetchProfile();
+  }, [user]);
+
+  const displayName = profile?.display_name || profile?.username || user?.email;
+  const initials = getInitials(displayName);
 
   return (
     <Tooltip text="Profile">
       <button
         onClick={onClick}
-        className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-150 hover:ring-2 hover:ring-[#2a2a2a]"
-        style={{
-          background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-          color: '#ffffff',
-        }}
+        className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-150 hover:ring-2 hover:ring-[#2a2a2a] overflow-hidden bg-[#1e1e1e]"
       >
-        {initials}
+        {profile?.avatar_url ? (
+          <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #a78bfa, #8b5cf6)', color: '#ffffff' }}>
+            {initials}
+          </div>
+        )}
       </button>
     </Tooltip>
   );
@@ -110,7 +121,7 @@ function UserAvatar({ user, onClick }) {
 
 /* ── Mobile Bottom Nav ───────────────────── */
 
-function MobileBottomNav({ activeTab, onTabChange, user }) {
+function MobileBottomNav({ activeTab, onTabChange }) {
   const allItems = [
     ...TABS,
     ...BOTTOM_ACTIONS,
@@ -118,7 +129,7 @@ function MobileBottomNav({ activeTab, onTabChange, user }) {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around px-2 safe-area-bottom"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around px-2 safe-area-bottom"
       style={{
         height: '60px',
         background: '#0a0a0a',
@@ -133,7 +144,7 @@ function MobileBottomNav({ activeTab, onTabChange, user }) {
             onClick={() => onTabChange(id)}
             className="flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors duration-150"
             style={{
-              color: isActive ? '#818cf8' : '#52525b',
+              color: isActive ? '#c4b5fd' : '#52525b',
             }}
           >
             <Icon size={20} strokeWidth={isActive ? 2.2 : 1.8} />
@@ -159,12 +170,9 @@ function DesktopSidebar({ activeTab, onTabChange, user }) {
     >
       {/* Logo */}
       <div className="mb-4 flex-shrink-0">
-        <img
-          src="/logo1.png"
-          alt="Blackroom"
-          className="w-8 h-8 rounded-lg object-contain"
-          draggable={false}
-        />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-[#a78bfa] to-[#c4b5fd] shadow-lg shadow-[#a78bfa]/20">
+          <span className="text-xl font-black text-black tracking-tighter">B</span>
+        </div>
       </div>
 
       {/* Divider */}
@@ -186,27 +194,13 @@ function DesktopSidebar({ activeTab, onTabChange, user }) {
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Bottom Divider */}
-      <div className="w-8 h-px mb-3" style={{ background: '#1e1e1e' }} />
-
-      {/* Bottom Actions */}
-      <div className="flex flex-col items-center gap-1.5 mb-3">
-        {BOTTOM_ACTIONS.map((action) => (
-          <SidebarButton
-            key={action.id}
-            icon={action.icon}
-            label={action.label}
-            isActive={activeTab === action.id}
-            onClick={() => onTabChange(action.id)}
-          />
-        ))}
-      </div>
-
       {/* User Avatar */}
-      <UserAvatar
-        user={user}
-        onClick={() => onTabChange('profile')}
-      />
+      <div className="mb-4">
+        <UserAvatar
+          user={user}
+          onClick={() => onTabChange('profile')}
+        />
+      </div>
     </aside>
   );
 }

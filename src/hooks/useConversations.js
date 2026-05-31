@@ -32,6 +32,7 @@ export function useConversations() {
         conversation_participants(
           user_id,
           role,
+          last_read_at,
           users(id, username, display_name, avatar_url, status, last_seen)
         )
       `)
@@ -70,6 +71,8 @@ export function useConversations() {
           displayAvatar: convo.is_group
             ? convo.group_avatar_url
             : otherParticipant?.users?.avatar_url,
+          myParticipantInfo: convo.conversation_participants?.find((p) => p.user_id === user.id),
+          unreadCount: (lastMsg && lastMsg.sender_id !== user.id && (!convo.conversation_participants?.find((p) => p.user_id === user.id)?.last_read_at || new Date(lastMsg.created_at) > new Date(convo.conversation_participants?.find((p) => p.user_id === user.id).last_read_at))) ? 1 : 0,
         };
       })
     );
@@ -89,8 +92,9 @@ export function useConversations() {
     fetchConversations();
 
     // Subscribe to new messages to update last message preview
+    const channelName = `conversations_updates_${Math.random().toString(36).substring(7)}`;
     const channel = supabase
-      .channel('conversations_updates')
+      .channel(channelName)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -160,11 +164,36 @@ export function useConversations() {
     return newConvo.id;
   }, [user, fetchConversations]);
 
+  const updateLastRead = useCallback(async (conversationId) => {
+    if (!user || !conversationId) return;
+    const now = new Date().toISOString();
+    
+    // Update local state optimistically
+    setConversations((prev) => 
+      prev.map((c) => {
+        if (c.id === conversationId && c.myParticipantInfo) {
+          return {
+            ...c,
+            myParticipantInfo: { ...c.myParticipantInfo, last_read_at: now }
+          };
+        }
+        return c;
+      })
+    );
+
+    await supabase
+      .from('conversation_participants')
+      .update({ last_read_at: now })
+      .eq('conversation_id', conversationId)
+      .eq('user_id', user.id);
+  }, [user]);
+
   return {
     conversations,
     loading,
     createDM,
     createGroup,
+    updateLastRead,
     refetch: fetchConversations,
   };
 }

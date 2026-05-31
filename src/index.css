@@ -27,8 +27,8 @@
   --text-muted: #52525b;
 
   /* Accent — subtle indigo */
-  --accent: #6366f1;
-  --accent-hover: #818cf8;
+  --accent: #a78bfa;
+  --accent-hover: #c4b5fd;
   --accent-glow: rgba(99, 102, 241, 0.12);
   --accent-subtle: rgba(99, 102, 241, 0.08);
 
@@ -47,32 +47,31 @@
 
 /* ── Reset ─────────────────────────────────── */
 
-*,
-*::before,
-*::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-}
+@layer base {
+  *,
+  *::before,
+  *::after {
+    -webkit-tap-highlight-color: transparent;
+  }
 
-html,
-body {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  font-family: var(--font-main);
-  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
+  html,
+  body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-main);
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
 
-#root {
-  height: 100%;
-  width: 100%;
+  #root {
+    height: 100%;
+    width: 100%;
+  }
 }
 
 /* ── Selection ─────────────────────────────── */
