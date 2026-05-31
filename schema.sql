@@ -45,13 +45,8 @@ create policy "Users are viewable by everyone." on public.users for select using
 -- 2. Users can insert/update their own profile
 create policy "Users can update own profile." on public.users for update using (auth.uid() = id);
 
--- 3. Users can view conversations they are part of
-create policy "Users can view their conversations." on public.conversations for select using (
-  exists (
-    select 1 from public.conversation_participants
-    where conversation_id = public.conversations.id and user_id = auth.uid()
-  )
-);
+-- 3. Users can view all conversations
+create policy "Users can view all conversations." on public.conversations for select using (true);
 
 -- 4. Users can view messages in conversations they are part of
 create policy "Users can view messages in their conversations." on public.messages for select using (
