@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import {
   Reply,
   SmilePlus,
@@ -118,7 +118,7 @@ function AudioPlayer({ src }) {
 
 // ─── MessageBubble ──────────────────────────────────────────────────────────
 
-function MessageBubble({
+const MessageBubble = memo(function MessageBubble({
   message,
   isOwn,
   isGroup,
@@ -370,7 +370,7 @@ function MessageBubble({
       </div>
     </div>
   );
-}
+});
 
 // ─── Typing indicator ───────────────────────────────────────────────────────
 

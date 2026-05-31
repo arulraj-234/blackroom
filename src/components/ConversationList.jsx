@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, memo } from 'react';
 import { Search, Plus, MessageCircle, Users } from 'lucide-react';
 
 /**
@@ -43,7 +43,7 @@ function getInitials(name) {
 
 /* ── Avatar ─────────────────────────────────── */
 
-function ConversationAvatar({ conversation }) {
+const ConversationAvatar = memo(function ConversationAvatar({ conversation }) {
   const isGroup = conversation.is_group;
   const initials = getInitials(conversation.displayName);
 
@@ -84,11 +84,11 @@ function ConversationAvatar({ conversation }) {
       {initials}
     </div>
   );
-}
+});
 
 /* ── Conversation Item ──────────────────────── */
 
-function ConversationItem({ conversation, isSelected, onSelect }) {
+const ConversationItem = memo(function ConversationItem({ conversation, isSelected, onSelect }) {
   return (
     <button
       onClick={() => onSelect(conversation.id)}
@@ -146,7 +146,7 @@ function ConversationItem({ conversation, isSelected, onSelect }) {
       </div>
     </button>
   );
-}
+});
 
 /* ── Empty State ────────────────────────────── */
 

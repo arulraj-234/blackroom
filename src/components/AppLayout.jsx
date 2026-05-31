@@ -129,9 +129,10 @@ function MobileBottomNav({ activeTab, onTabChange }) {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around px-2 safe-area-bottom"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around px-2"
       style={{
-        height: '60px',
+        height: 'calc(60px + env(safe-area-inset-bottom))',
+        paddingBottom: 'env(safe-area-inset-bottom)',
         background: '#0a0a0a',
         borderTop: '1px solid #1e1e1e',
       }}
@@ -211,7 +212,7 @@ function AppLayout({ children, activeTab, onTabChange }) {
   const { user } = useAuth();
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden" style={{ background: '#050505' }}>
+    <div className="flex h-[100dvh] w-screen overflow-hidden" style={{ background: '#050505' }}>
       {/* Desktop Sidebar */}
       <DesktopSidebar
         activeTab={activeTab}
