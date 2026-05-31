@@ -137,6 +137,50 @@ const MessageBubble = memo(function MessageBubble({
   const [emojiAnchor, setEmojiAnchor] = useState({ top: 0, left: 0 });
   const actionBarRef = useRef(null);
 
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const touchStartRef = useRef(null);
+  const touchTimerRef = useRef(null);
+
+  const handleTouchStart = useCallback((e) => {
+    touchStartRef.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+      time: Date.now()
+    };
+    setIsDragging(true);
+    touchTimerRef.current = setTimeout(() => {
+      setShowMore(true);
+      if (window.navigator.vibrate) window.navigator.vibrate(50);
+    }, 400);
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (!touchStartRef.current) return;
+    const deltaX = e.touches[0].clientX - touchStartRef.current.x;
+    const deltaY = e.touches[0].clientY - touchStartRef.current.y;
+    
+    if (Math.abs(deltaY) > 10 || Math.abs(deltaX) > 10) {
+      clearTimeout(touchTimerRef.current);
+    }
+    
+    if (deltaX < 0 && Math.abs(deltaY) < 20) {
+      setSwipeOffset(Math.max(-60, deltaX));
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    clearTimeout(touchTimerRef.current);
+    setIsDragging(false);
+    
+    if (swipeOffset <= -50) {
+      if (window.navigator.vibrate) window.navigator.vibrate(50);
+      onReply(message);
+    }
+    setSwipeOffset(0);
+    touchStartRef.current = null;
+  }, [swipeOffset, onReply, message]);
+
   const handleReact = useCallback(
     (e) => {
       const rect = e.currentTarget.getBoundingClientRect();
@@ -179,7 +223,26 @@ const MessageBubble = memo(function MessageBubble({
     <div
       className={`group flex gap-2.5 max-w-full relative ${isOwn ? 'justify-end' : 'justify-start'}`}
       onMouseLeave={() => setShowMore(false)}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={{
+        transform: `translateX(${swipeOffset}px)`,
+        transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+      }}
     >
+      {/* Slide to reply icon */}
+      <div 
+        className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-[#1e1e1e] border border-[#2a2a2a] shadow-lg text-[#a78bfa]"
+        style={{ 
+          right: '-44px',
+          opacity: swipeOffset < -10 ? Math.min(1, Math.abs(swipeOffset) / 50) : 0,
+          transform: `scale(${swipeOffset <= -50 ? 1.1 : 1})`,
+          transition: 'transform 0.2s, opacity 0.2s'
+        }}
+      >
+        <Reply size={14} />
+      </div>
       {!isOwn && (
         <div className="shrink-0 mt-auto">
           {showAvatar ? (
@@ -309,7 +372,7 @@ const MessageBubble = memo(function MessageBubble({
           className={`absolute -top-9 flex items-center gap-0.5 px-1 py-0.5
             bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg shadow-lg shadow-black/40 z-20 transition-all duration-150
             before:absolute before:-bottom-4 before:left-0 before:right-0 before:h-4 before:bg-transparent
-            ${showMore ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'}
+            ${showMore ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto'}
             ${isOwn ? 'right-0' : 'left-0'}`}
         >
             <button
