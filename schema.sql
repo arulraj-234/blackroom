@@ -69,3 +69,12 @@ create policy "Users can insert messages in their conversations." on public.mess
     where conversation_id = public.messages.conversation_id and user_id = auth.uid()
   )
 );
+
+-- 6. Authenticated users can create conversations
+create policy "Authenticated users can create conversations." on public.conversations for insert with check (auth.uid() is not null);
+
+-- 7. Users can insert participants
+create policy "Users can insert participants." on public.conversation_participants for insert with check (auth.uid() is not null);
+
+-- 8. Users can view participants
+create policy "Users can view participants." on public.conversation_participants for select using (true);
